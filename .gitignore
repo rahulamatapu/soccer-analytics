@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Spark
+spark-warehouse/
+metastore_db/
+derby.log
+checkpoints/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
