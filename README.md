@@ -26,3 +26,20 @@ cp .env.example .env
 uv sync            # creates .venv with Python 3.11 + dev dependencies
 ```
 
+## Infrastructure
+
+```bash
+make up        # start Kafka (KRaft) + Postgres, create the `live-match-events` topic
+make ps        # container status
+make describe  # topic partitions / leaders
+make consume   # tail the topic from the beginning
+make psql      # psql shell into Postgres
+make down      # stop (keeps data)
+make reset     # stop and DELETE all data volumes
+```
+
+| Service | From containers | From your Mac |
+|---|---|---|
+| Kafka | `kafka:9092` | `localhost:29092` |
+| Postgres | `postgres:5432` | `localhost:5432` |
+
