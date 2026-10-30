@@ -38,7 +38,7 @@ make down      # stop (keeps data)
 make reset     # stop and DELETE all data volumes
 ```
 
-| Service | From containers | From your Mac |
+| Service | From containers | Local |
 |---|---|---|
 | Kafka | `kafka:9092` | `localhost:29092` |
 | Postgres | `postgres:5432` | `localhost:5432` |
