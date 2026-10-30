@@ -10,10 +10,10 @@ KAFKA_BIN := /opt/kafka/bin
 COMPOSE := docker compose
 
 .DEFAULT_GOAL := help
-.PHONY: help up down ps logs topics describe consume psql reset lint
+.PHONY: help up down ps logs topics describe consume psql reset lint test produce-local matches
 
 help: ## Show available targets
-	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
 up: ## Start Kafka + Postgres (and create the topic)
 	$(COMPOSE) up -d --wait kafka postgres
@@ -46,4 +46,13 @@ reset: ## Stop containers AND delete all data volumes (destructive)
 
 lint: ## Run ruff lint + format check
 	uv run ruff check . && uv run ruff format --check .
+
+test: ## Run unit tests
+	uv run pytest
+
+matches: ## List World Cup 2022 matches (ids for MATCH_ID)
+	uv run python -m producer.producer --list-matches
+
+produce-local: ## Replay a match into Kafka from your Mac (ARGS="--speed 60 --max-events 500")
+	uv run python -m producer.producer --bootstrap localhost:29092 $(ARGS)
 
