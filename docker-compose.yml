@@ -79,7 +79,66 @@ services:
       timeout: 5s
       retries: 10
 
+  # ---------------------------------------------------------------------------
+  # PySpark Structured Streaming processor
+  # ---------------------------------------------------------------------------
+  spark:
+    build:
+      context: .
+      dockerfile: spark/Dockerfile
+    container_name: spark
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      KAFKA_BOOTSTRAP: kafka:9092
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-live-match-events}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-momentum_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-momentum}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      CHECKPOINT_ROOT: /checkpoints
+      WINDOW_DURATION: ${WINDOW_DURATION:-5 minutes}
+      WINDOW_SLIDE: ${WINDOW_SLIDE:-1 minute}
+      WATERMARK: ${WATERMARK:-2 minutes}
+      TRIGGER_INTERVAL: ${TRIGGER_INTERVAL:-10 seconds}
+      W_FINAL_THIRD: ${W_FINAL_THIRD:-1.0}
+      W_SHOT: ${W_SHOT:-3.0}
+      W_XG: ${W_XG:-5.0}
+      W_TACKLE: ${W_TACKLE:-0.5}
+    volumes:
+      - spark-checkpoints:/checkpoints
+      - ./spark:/app/spark:ro
+    entrypoint: ["/opt/spark/bin/spark-submit"]
+    command: ["--master", "local[2]", "/app/spark/jobs/momentum_stream.py"]
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # PySpark test runner (runs pytest inside container with Java + Spark available)
+  # ---------------------------------------------------------------------------
+  spark-tests:
+    image: momentum-spark
+    container_name: spark-tests
+    environment:
+      APP_ENV: test
+      PYTHONPATH: /app
+      VIRTUAL_ENV: /opt/venv
+      PATH: /opt/venv/bin:/opt/spark/bin:/opt/spark/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    volumes:
+      - ./producer:/app/producer:ro
+      - ./spark:/app/spark:ro
+      - ./tests:/app/tests:ro
+    entrypoint: ["/opt/venv/bin/pytest"]
+    command: ["-v", "-o", "cache_dir=/tmp/.pytest_cache", "tests"]
+    profiles:
+      - test
+
 volumes:
   kafka-data:
   pg-data:
+  spark-checkpoints:
 

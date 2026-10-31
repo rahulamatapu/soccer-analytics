@@ -75,3 +75,17 @@ How it works:
 make test      # unit tests (no Kafka needed)
 ```
 
+## Stream processing: PySpark environment
+
+The Spark streaming environment is containerized via `apache/spark:3.5.3-python3` using a standalone **Python 3.11** virtual environment and pre-bundled JAR connectors:
+- `spark-sql-kafka-0-10_2.12:3.5.3` (Kafka Structured Streaming source)
+- `postgresql:42.7.4` (PostgreSQL JDBC sink)
+
+```bash
+make spark-build  # build the Spark container image with pre-bundled connectors
+make spark-test   # run the test suite inside the container (with Java & Spark runtime)
+make spark-run    # run the Spark job entrypoint
+make spark-logs   # follow Spark streaming logs
+```
+
+
