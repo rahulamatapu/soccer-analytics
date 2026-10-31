@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import signal
 import sys
 from typing import Any
@@ -10,6 +11,7 @@ from typing import Any
 from pyspark.sql import DataFrame, SparkSession
 
 from spark.momentum.config import Settings
+from spark.momentum.sink import PostgresSink
 from spark.momentum.transforms import (
     add_event_time,
     calculate_momentum_window,
@@ -79,15 +81,33 @@ def main() -> None:
     # 2. Apply Transformations
     momentum_df = build_pipeline(raw_kafka_df, cfg)
 
-    # 3. Stream to Console Sink (Phase 2 milestone)
-    query = (
-        momentum_df.writeStream.format("console")
-        .outputMode("update")
-        .trigger(processingTime=cfg.trigger_interval)
-        .option("truncate", "false")
-        .option("numRows", "20")
-        .start()
-    )
+    # 3. Stream Sink: PostgreSQL (default) or Console
+    sink_type = os.environ.get("SINK_TYPE", "postgres").strip().lower()
+
+    if sink_type == "console":
+        log.info("Starting console sink in update mode...")
+        query = (
+            momentum_df.writeStream.format("console")
+            .outputMode("update")
+            .trigger(processingTime=cfg.trigger_interval)
+            .option("truncate", "false")
+            .option("numRows", "20")
+            .start()
+        )
+    else:
+        log.info(
+            "Starting PostgreSQL sink with checkpointing [jdbc=%s, checkpoint=%s]",
+            cfg.jdbc_url,
+            cfg.checkpoint_dir,
+        )
+        sink = PostgresSink(cfg)
+        query = (
+            momentum_df.writeStream.outputMode("update")
+            .trigger(processingTime=cfg.trigger_interval)
+            .option("checkpointLocation", cfg.checkpoint_dir)
+            .foreachBatch(sink.write_batch)
+            .start()
+        )
 
     log.info("Streaming query started [id=%s]. Waiting for micro-batches...", query.id)
 

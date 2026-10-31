@@ -10,7 +10,7 @@ KAFKA_BIN := /opt/kafka/bin
 COMPOSE := docker compose
 
 .DEFAULT_GOAL := help
-.PHONY: help up down ps logs topics describe consume psql reset lint test matches produce-local spark-build spark-test spark-run spark-logs
+.PHONY: help up down ps logs topics describe consume psql reset lint test matches produce-local spark-build spark-test spark-run spark-logs query-latest query-momentum
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -67,4 +67,10 @@ spark-run: ## Run the Spark streaming container
 
 spark-logs: ## Follow Spark container logs
 	$(COMPOSE) logs -f spark
+
+query-latest: ## Query the latest momentum score view in PostgreSQL
+	$(COMPOSE) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -c "SELECT * FROM v_latest_momentum;"
+
+query-momentum: ## Query the latest 10 momentum windows in PostgreSQL
+	$(COMPOSE) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -c "SELECT window_start, window_end, home_possession_pct, away_possession_pct, home_shots, away_shots, home_momentum, away_momentum, momentum_diff FROM match_momentum ORDER BY window_start DESC LIMIT 10;"
 

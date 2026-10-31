@@ -84,37 +84,58 @@ The Spark streaming environment is containerized via `apache/spark:3.5.3-python3
 ```bash
 make spark-build  # build the Spark container image with pre-bundled connectors
 make spark-test   # run the test suite inside the container (with Java & Spark runtime)
-make spark-run    # run the Spark job entrypoint (streaming to console)
+make spark-run    # run the Spark job entrypoint (streams to PostgreSQL with checkpointing)
 make spark-logs   # follow Spark streaming logs
 ```
 
-### Running the Live Streaming Pipeline
+### Running the End-to-End Pipeline
 
 Open two terminal windows:
 
 **Terminal 1 (Start infra & streaming processor):**
 ```bash
 make up                 # starts Kafka and Postgres
-make spark-run          # starts PySpark Structured Streaming to console
+make spark-run          # starts PySpark Structured Streaming sinking to Postgres
 ```
 
 **Terminal 2 (Replay events):**
 ```bash
-make produce-local      # replays live match events at 30x speed
+make produce-local      # replays live match events at 30x speed (~3-4 min)
+# or for an instant replay of 500 events:
+make produce-local ARGS="--speed 0 --max-events 500"
 ```
 
-Spark will output real-time rolling momentum micro-batches:
-```text
--------------------------------------------
-Batch: 2
--------------------------------------------
-+--------+---------+---------+---------------------+---------------------+-----------------------+-----------------------+----------+----------+-------------+-------------+------------+------------+-------------------+-------------------+-------------------+-------------------+-----------+-----------+-------------+-------------+-------------+
-|match_id|home_team|away_team|home_completed_passes|away_completed_passes|home_final_third_passes|away_final_third_passes|home_shots|away_shots|home_total_xg|away_total_xg|home_tackles|away_tackles|window_start       |window_end         |home_possession_pct|away_possession_pct|home_avg_xg|away_avg_xg|home_momentum|away_momentum|momentum_diff|
-+--------+---------+---------+---------------------+---------------------+-----------------------+-----------------------+----------+----------+-------------+-------------+------------+------------+-------------------+-------------------+-------------------+-------------------+-----------+-----------+-------------+-------------+-------------+
-|3869685 |Argentina|France   |50                   |38                   |18                     |0                      |2         |0         |0.049        |0.0          |0           |4           |2022-12-18 17:01:00|2022-12-18 17:06:00|56.82              |43.18              |0.0245     |0.0        |24.245       |2.0          |22.245       |
-|3869685 |Argentina|France   |38                   |45                   |18                     |0                      |2         |0         |0.049        |0.0          |0           |4           |2022-12-18 17:02:00|2022-12-18 17:07:00|45.78              |54.22              |0.0245     |0.0        |24.245       |2.0          |22.245       |
-+--------+---------+---------+---------------------+---------------------+-----------------------+-----------------------+----------+----------+-------------+-------------+------------+------------+-------------------+-------------------+-------------------+-------------------+-----------+-----------+-------------+-------------+-------------+
+### Querying Real-Time Momentum in PostgreSQL
+
+Query live rolling metrics stored in the relational database:
+
+```bash
+make query-latest    # inspect the most recent momentum window from v_latest_momentum
+make query-momentum  # inspect the 10 most recent rolling momentum windows
+make psql            # interactive psql shell
 ```
+
+Example query in PostgreSQL:
+```sql
+SELECT 
+    window_start, 
+    home_possession_pct, 
+    away_possession_pct, 
+    home_shots, 
+    away_shots, 
+    home_momentum, 
+    away_momentum, 
+    momentum_diff 
+FROM match_momentum 
+ORDER BY window_start DESC 
+LIMIT 5;
+```
+
+### Idempotency & Fault Tolerance
+
+1. **Idempotency**: Replaying the match event stream will never duplicate rows. The table uses `(match_id, window_start)` as its natural primary key. Micro-batches bulk-insert into `stg_match_momentum` and execute an atomic `INSERT ... ON CONFLICT (match_id, window_start) DO UPDATE`.
+2. **Fault Tolerance**: Spark offsets and window states are saved to the persistent volume `spark-checkpoints:/checkpoints/dev/momentum`. If the Spark container stops or crashes, restarting it resumes exactly from the last committed micro-batch.
+
 
 
 
