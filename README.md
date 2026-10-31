@@ -133,9 +133,12 @@ StatsBomb match timestamps restart at `00:00:00.000` at the beginning of each pe
 
 Instead, the engine derives a continuous **match-clock timestamp**:
 
-$$\text{event\_time} = \text{kickoff\_ts} + \text{PERIOD\_OFFSET} + \text{time\_in\_period}$$
+$$\text{Event Time} = \text{Kickoff Timestamp} + \text{Period Offset} + \text{Time in Period}$$
 
-$$\text{PERIOD\_OFFSETS} = \{1: 0', \; 2: 60', \; 3: 120', \; 4: 150', \; 5: 180'\}$$
+$$\text{Period Offsets} = \{1: 0', \; 2: 60', \; 3: 120', \; 4: 150', \; 5: 180'\}$$
+
+where `event_time` is continuous match time, and `PERIOD_OFFSETS` maps period start offsets in seconds:
+`{1: 0, 2: 3600, 3: 7200, 4: 9000, 5: 10800}`.
 
 * **Stoppage-time safety:** A 15-minute gap between periods ensures that extended first-half stoppage time (e.g. minute 52) never collides with the start of the second half.
 * **Determinism:** Every replay of a historic match produces the exact same timestamps and window boundaries.
