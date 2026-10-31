@@ -241,3 +241,33 @@ def test_calculate_momentum_window(spark):
     assert window_row.home_momentum == pytest.approx(6.5)
     assert window_row.away_momentum == pytest.approx(0.0)
     assert window_row.momentum_diff == pytest.approx(6.5)
+
+
+def test_build_pipeline_schema(spark):
+    from spark.jobs.momentum_stream import build_pipeline
+
+    settings = Settings.from_env()
+    raw_event = make_raw_envelope(event_type="Pass")
+    raw_df = spark.createDataFrame([(raw_event.encode("utf-8"),)], ["value"])
+
+    out = build_pipeline(raw_df, settings, apply_watermark=False)
+
+    expected_cols = {
+        "match_id",
+        "home_team",
+        "away_team",
+        "window_start",
+        "window_end",
+        "home_completed_passes",
+        "away_completed_passes",
+        "home_possession_pct",
+        "away_possession_pct",
+        "home_shots",
+        "away_shots",
+        "home_avg_xg",
+        "away_avg_xg",
+        "home_momentum",
+        "away_momentum",
+        "momentum_diff",
+    }
+    assert expected_cols.issubset(set(out.columns))

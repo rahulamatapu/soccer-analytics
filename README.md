@@ -84,8 +84,37 @@ The Spark streaming environment is containerized via `apache/spark:3.5.3-python3
 ```bash
 make spark-build  # build the Spark container image with pre-bundled connectors
 make spark-test   # run the test suite inside the container (with Java & Spark runtime)
-make spark-run    # run the Spark job entrypoint
+make spark-run    # run the Spark job entrypoint (streaming to console)
 make spark-logs   # follow Spark streaming logs
 ```
+
+### Running the Live Streaming Pipeline
+
+Open two terminal windows:
+
+**Terminal 1 (Start infra & streaming processor):**
+```bash
+make up                 # starts Kafka and Postgres
+make spark-run          # starts PySpark Structured Streaming to console
+```
+
+**Terminal 2 (Replay events):**
+```bash
+make produce-local      # replays live match events at 30x speed
+```
+
+Spark will output real-time rolling momentum micro-batches:
+```text
+-------------------------------------------
+Batch: 2
+-------------------------------------------
++--------+---------+---------+---------------------+---------------------+-----------------------+-----------------------+----------+----------+-------------+-------------+------------+------------+-------------------+-------------------+-------------------+-------------------+-----------+-----------+-------------+-------------+-------------+
+|match_id|home_team|away_team|home_completed_passes|away_completed_passes|home_final_third_passes|away_final_third_passes|home_shots|away_shots|home_total_xg|away_total_xg|home_tackles|away_tackles|window_start       |window_end         |home_possession_pct|away_possession_pct|home_avg_xg|away_avg_xg|home_momentum|away_momentum|momentum_diff|
++--------+---------+---------+---------------------+---------------------+-----------------------+-----------------------+----------+----------+-------------+-------------+------------+------------+-------------------+-------------------+-------------------+-------------------+-----------+-----------+-------------+-------------+-------------+
+|3869685 |Argentina|France   |50                   |38                   |18                     |0                      |2         |0         |0.049        |0.0          |0           |4           |2022-12-18 17:01:00|2022-12-18 17:06:00|56.82              |43.18              |0.0245     |0.0        |24.245       |2.0          |22.245       |
+|3869685 |Argentina|France   |38                   |45                   |18                     |0                      |2         |0         |0.049        |0.0          |0           |4           |2022-12-18 17:02:00|2022-12-18 17:07:00|45.78              |54.22              |0.0245     |0.0        |24.245       |2.0          |22.245       |
++--------+---------+---------+---------------------+---------------------+-----------------------+-----------------------+----------+----------+-------------+-------------+------------+------------+-------------------+-------------------+-------------------+-------------------+-----------+-----------+-------------+-------------+-------------+
+```
+
 
 
