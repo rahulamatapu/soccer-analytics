@@ -16,7 +16,7 @@ ENV PATH=/opt/venv/bin:/opt/spark/bin:/opt/spark/sbin:$PATH
 ENV VIRTUAL_ENV=/opt/venv
 ENV PYSPARK_PYTHON=/opt/venv/bin/python
 ENV PYSPARK_DRIVER_PYTHON=/opt/venv/bin/python
-ENV PYTHONPATH=/app:$PYTHONPATH
+ENV PYTHONPATH=/app:/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip:$PYTHONPATH
 
 # Download connectors directly into Spark's JAR directory to eliminate runtime downloads:
 # 1. Spark SQL Kafka 0-10 (v3.5.3)

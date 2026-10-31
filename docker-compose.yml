@@ -125,7 +125,7 @@ services:
     container_name: spark-tests
     environment:
       APP_ENV: test
-      PYTHONPATH: /app
+      PYTHONPATH: /app:/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip
       VIRTUAL_ENV: /opt/venv
       PATH: /opt/venv/bin:/opt/spark/bin:/opt/spark/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     volumes:
