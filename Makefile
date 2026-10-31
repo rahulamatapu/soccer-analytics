@@ -10,7 +10,7 @@ KAFKA_BIN := /opt/kafka/bin
 COMPOSE := docker compose
 
 .DEFAULT_GOAL := help
-.PHONY: help up down ps logs topics describe consume psql reset lint test matches produce-local spark-build spark-test spark-run spark-logs query-latest query-momentum
+.PHONY: help up down ps logs topics describe consume psql reset lint test matches produce produce-local build spark-build spark-test spark-run spark-logs query-latest query-momentum
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -53,8 +53,14 @@ test: ## Run unit tests
 matches: ## List World Cup 2022 matches (ids for MATCH_ID)
 	uv run python -m producer.producer --list-matches
 
-produce-local: ## Replay a match into Kafka (ARGS="--speed 60 --max-events 500")
+produce: ## Replay match events using the containerized producer (e.g. ARGS="--speed 30")
+	$(COMPOSE) --profile producer run --rm producer $(ARGS)
+
+produce-local: ## Replay a match into Kafka from your Mac (ARGS="--speed 60 --max-events 500")
 	uv run python -m producer.producer --bootstrap localhost:29092 $(ARGS)
+
+build: ## Build all Docker images (Spark + Producer)
+	$(COMPOSE) build spark producer
 
 spark-build: ## Build the Spark Docker image with pre-bundled connectors
 	$(COMPOSE) build spark

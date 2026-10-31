@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    name: Lint & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17 (for PySpark)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Install Python 3.11 & dependencies
+        run: |
+          uv python install 3.11
+          uv sync --locked
+
+      - name: Code formatting and linting check (Ruff)
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Execute test suite with coverage
+        run: |
+          uv run pytest --cov=spark --cov=producer --cov-report=term-missing
+
+  docker-validation:
+    name: Docker Compose Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose specification
+        run: |
+          cp .env.example .env
+          docker compose config -q
+          echo "Docker compose configuration is valid."
+
+      - name: Build container images
+        run: |
+          docker compose build spark producer
+

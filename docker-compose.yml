@@ -119,6 +119,26 @@ services:
     restart: "no"
 
   # ---------------------------------------------------------------------------
+  # Python match event producer (containerized)
+  # ---------------------------------------------------------------------------
+  producer:
+    build:
+      context: .
+      dockerfile: producer/Dockerfile
+    container_name: producer
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      PRODUCER_BOOTSTRAP: kafka:9092
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-live-match-events}
+      SPEED: ${SPEED:-30}
+      MATCH_ID: ${MATCH_ID:-3869685}
+      LATE_PROB: ${LATE_PROB:-0.03}
+    profiles:
+      - producer
+
+  # ---------------------------------------------------------------------------
   # PySpark test runner (runs pytest inside container with Java + Spark available)
   # ---------------------------------------------------------------------------
   spark-tests:
