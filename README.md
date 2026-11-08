@@ -7,6 +7,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker_Compose-v2-2496ED?logo=docker&logoColor=white)
 ![uv](https://img.shields.io/badge/package_manager-uv-DE5FE9?logo=astral&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A production-grade, real-time streaming data pipeline that ingests live soccer match events, calculates rolling momentum metrics using stateful stream processing, and continuously sinks deduplicated, windowed analytics into PostgreSQL.
 
@@ -335,6 +336,7 @@ soccer-analytics/
 ├── .python-version                # Pinned to Python 3.11
 ├── docker-compose.yml             # Local service orchestration (Kafka, Postgres, Spark, Producer)
 ├── Makefile                       # Developer CLI shortcuts
+├── LICENSE                        # MIT License
 ├── pyproject.toml                 # uv project configuration and dependency groups
 ├── uv.lock                        # Pinned lockfile for reproducible environments
 └── README.md
